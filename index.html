@@ -41,7 +41,7 @@
             display: flex;
             align-items: center;
             flex: 1 1 45%;
-            position: relative; /* Positioning context for the checkbox */
+            position: relative;
         }
         .product-links input[type="url"] {
             flex: 1;
@@ -51,14 +51,14 @@
             border-radius: 4px;
         }
         .product-links input[type="checkbox"] {
-            position: absolute; /* Positioning the checkbox */
-            top: 50%; /* Center vertically */
-            right: 10px; /* Align to the right */
-            transform: translateY(-50%); /* Adjust vertical alignment */
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
             width: 20px;
             height: 20px;
             cursor: pointer;
-            accent-color: red; /* Modern browsers support this for checkbox color */
+            accent-color: red; 
         }
         .download-btn, .upload-btn, .share-btn, .copy-link-btn, .load-link-btn {
             display: block;
@@ -181,13 +181,13 @@
             inputs.forEach(input => {
                 const [model, , day] = input.name.split('_');
                 const checkbox = form.querySelector(`input[name="${model}_${day.replace('day', 'checkbox')}"]`);
-                const completed = checkbox.checked ? 'Yes' : 'No'; // Check if the checkbox is checked
-                data += `${model.replace(/-/g, ' ')},${day},${input.value || ''},${completed}\n`; // Allow empty values
+                const completed = checkbox.checked ? 'Yes' : 'No'; 
+                data += `${model.replace(/-/g, ' ')},${day.replace('day_', '')},${input.value || ''},${completed}\n`; // Allow empty values
             });
 
             const blob = new Blob([data], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
-            generatedLink = url; // Store the generated link
+            generatedLink = url; 
             const a = document.createElement('a');
             a.href = url;
             a.download = 'deal_of_the_day_calendar.csv';
@@ -212,13 +212,12 @@
             const models = {};
 
             lines.forEach((line, index) => {
-                // Skip the header line
                 if (index === 0) return;
 
                 const [model, day, link, completed] = line.split(',');
                 if (model && day && link) {
                     const normalizedModel = model.trim().replace(/ /g, '-');
-                    const normalizedDay = `day_${day.trim()}`; // normalize the day input
+                    const normalizedDay = `day_${day.trim()}`; 
 
                     if (!models[normalizedModel]) {
                         models[normalizedModel] = [];
@@ -227,12 +226,10 @@
                 }
             });
 
-            // Clear previous input fields
             document.getElementById('bikeModelsContainer').innerHTML = '';
 
-            // Populate bike models and links
             for (const model in models) {
-                addBikeModelSection(model.replace(/-/g, ' ')); // Show original model name
+                addBikeModelSection(model.replace(/-/g, ' '));
                 models[model].forEach(item => {
                     const input = document.querySelector(`input[name="${model}_${item.day}"]`);
                     const checkbox = document.querySelector(`input[name="${model.replace(/-/g, '-')}_${item.day.replace('day', 'checkbox')}"]`);
@@ -244,7 +241,30 @@
 
         function generateShareableLink() {
             const linkInput = document.getElementById('shareableLink');
-            linkInput.value = generatedLink || 'No link generated yet.';
+            const csvData = getCSVData();
+            if (csvData) {
+                const blob = new Blob([csvData], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                generatedLink = url; 
+                linkInput.value = url; 
+            } else {
+                linkInput.value = 'No data to share.';
+            }
+        }
+
+        function getCSVData() {
+            const form = document.getElementById('calendarForm');
+            const inputs = form.querySelectorAll('input[type="url"]');
+            let data = 'Bike Model,Day,Product Link,Completed\n';
+
+            inputs.forEach(input => {
+                const [model, , day] = input.name.split('_');
+                const checkbox = form.querySelector(`input[name="${model.replace(/ /g, '-')}_${day.replace('day', 'checkbox')}"]`);
+                const completed = checkbox.checked ? 'Yes' : 'No';
+                data += `${model.replace(/-/g, ' ')},${day.replace('day_', '')},${input.value || ''},${completed}\n`;
+            });
+
+            return data.trim() ? data : null;
         }
 
         function copyToClipboard() {
