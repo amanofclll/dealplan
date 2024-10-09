@@ -60,7 +60,7 @@
             cursor: pointer;
             accent-color: red; /* Modern browsers support this for checkbox color */
         }
-        .download-btn, .upload-btn, .share-btn, .copy-link-btn {
+        .download-btn, .upload-btn, .share-btn, .copy-link-btn, .load-link-btn {
             display: block;
             width: 100%;
             padding: 15px;
@@ -72,7 +72,7 @@
             cursor: pointer;
             margin-top: 20px;
         }
-        .download-btn:hover, .upload-btn:hover, .share-btn:hover, .copy-link-btn:hover {
+        .download-btn:hover, .upload-btn:hover, .share-btn:hover, .copy-link-btn:hover, .load-link-btn:hover {
             background-color: #218838;
         }
         .model-selector {
@@ -82,6 +82,10 @@
             margin-right: 15px;
         }
         .link-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #loadLinkContainer {
             margin-top: 20px;
             text-align: center;
         }
@@ -116,6 +120,12 @@
             <button type="button" class="share-btn" onclick="generateShareableLink()">Generate Shareable Link</button>
             <input type="text" id="shareableLink" readonly style="width: 100%; margin-top: 10px;">
             <button type="button" class="copy-link-btn" onclick="copyToClipboard()">Copy Shareable Link</button>
+        </div>
+
+        <div id="loadLinkContainer">
+            <h3>Access Calendar with Shareable Link:</h3>
+            <input type="text" id="userLinkInput" placeholder="Paste Shareable Link here" style="width: 100%;">
+            <button type="button" class="load-link-btn" onclick="loadCalendarFromLink()">Load Calendar</button>
         </div>
     </div>
 
@@ -224,12 +234,10 @@
             for (const model in models) {
                 addBikeModelSection(model.replace(/-/g, ' ')); // Show original model name
                 models[model].forEach(item => {
-                    const input = document.querySelector(`input[name="${model}_${item.day}"]`); // Use updated name structure
-                    const checkbox = document.querySelector(`input[name="${model}_${item.day.replace('day', 'checkbox')}"]`); // Checkbox name
-                    if (input) {
-                        input.value = item.link;
-                        checkbox.checked = item.completed === 'Yes'; // Set checkbox based on CSV data
-                    }
+                    const input = document.querySelector(`input[name="${model}_${item.day}"]`);
+                    const checkbox = document.querySelector(`input[name="${model.replace(/-/g, '-')}_${item.day.replace('day', 'checkbox')}"]`);
+                    if (input) input.value = item.link;
+                    if (checkbox) checkbox.checked = item.completed === 'Yes';
                 });
             }
         }
@@ -244,6 +252,27 @@
             linkInput.select();
             document.execCommand('copy');
             alert('Link copied to clipboard!');
+        }
+
+        function loadCalendarFromLink() {
+            const userLinkInput = document.getElementById('userLinkInput');
+            const link = userLinkInput.value;
+
+            if (link) {
+                fetch(link)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(data => parseCSV(data))
+                    .catch(error => {
+                        alert('Error fetching the calendar: ' + error);
+                    });
+            } else {
+                alert('Please paste a valid shareable link.');
+            }
         }
     </script>
 </body>
