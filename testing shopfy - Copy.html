@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal of the Day Calendar Planner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .bike-model {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .bike-model h2 {
+            margin-top: 0;
+            color: #444;
+        }
+        .product-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .product-links div {
+            display: flex;
+            align-items: center;
+            flex: 1 1 45%;
+            position: relative; /* Positioning context for the checkbox */
+        }
+        .product-links input[type="url"] {
+            flex: 1;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .product-links input[type="checkbox"] {
+            position: absolute; /* Positioning the checkbox */
+            top: 50%; /* Center vertically */
+            right: 10px; /* Align to the right */
+            transform: translateY(-50%); /* Adjust vertical alignment */
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: red; /* Modern browsers support this for checkbox color */
+        }
+        .download-btn, .upload-btn, .share-btn, .copy-link-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .download-btn:hover, .upload-btn:hover, .share-btn:hover, .copy-link-btn:hover {
+            background-color: #218838;
+        }
+        .model-selector {
+            margin-bottom: 20px;
+        }
+        .model-selector label {
+            margin-right: 15px;
+        }
+        .link-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        @media (max-width: 600px) {
+            .product-links input[type="url"] {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Deal of the Day Calendar Planner</h1>
+        <div class="model-selector">
+            <h3>Select Bike Models:</h3>
+            <label><input type="checkbox" value="Super Meteor 650"> Super Meteor 650</label>
+            <label><input type="checkbox" value="Jawa 42 Bobber"> Jawa 42 Bobber</label>
+            <label><input type="checkbox" value="350 Meteor"> 350 Meteor</label>
+            <label><input type="checkbox" value="Harley 440x"> Harley 440x</label>
+            <label><input type="checkbox" value="Himalayan 450"> Himalayan 450</label>
+            <label><input type="checkbox" value="Hunter 350"> Hunter 350</label>
+        </div>
+
+        <form id="calendarForm">
+            <div id="bikeModelsContainer"></div>
+            <button type="button" class="download-btn" onclick="downloadCalendar()">Download Calendar</button>
+            <input type="file" id="fileInput" accept=".csv" class="upload-btn" onchange="handleFileUpload(event)">
+        </form>
+
+        <div class="link-container">
+            <button type="button" class="share-btn" onclick="generateShareableLink()">Generate Shareable Link</button>
+            <input type="text" id="shareableLink" readonly style="width: 100%; margin-top: 10px;">
+            <button type="button" class="copy-link-btn" onclick="copyToClipboard()">Copy Shareable Link</button>
+        </div>
+    </div>
+
+    <script>
+        const selectedModels = new Set();
+        let generatedLink = '';
+
+        document.querySelectorAll('.model-selector input').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const modelName = this.value;
+                if (this.checked) {
+                    selectedModels.add(modelName);
+                    addBikeModelSection(modelName);
+                } else {
+                    selectedModels.delete(modelName);
+                    removeBikeModelSection(modelName);
+                }
+            });
+        });
+
+        function addBikeModelSection(modelName) {
+            const container = document.getElementById('bikeModelsContainer');
+            const section = document.createElement('div');
+            section.className = 'bike-model';
+            section.id = `section-${modelName.replace(/\s+/g, '-')}`;
+
+            let html = `<h2>${modelName}</h2><div class="product-links">`;
+            for (let i = 1; i <= 30; i++) {
+                html += `
+                    <div>
+                        <input type="url" placeholder="Day ${i} Product Link" name="${modelName.replace(/ /g, '-')}_day_${i}">
+                        <input type="checkbox" name="${modelName.replace(/ /g, '-')}_checkbox_${i}">
+                    </div>
+                `;
+            }
+            html += `</div>`;
+            section.innerHTML = html;
+            container.appendChild(section);
+        }
+
+        function removeBikeModelSection(modelName) {
+            const section = document.getElementById(`section-${modelName.replace(/\s+/g, '-')}`);
+            if (section) {
+                section.remove();
+            }
+        }
+
+        function downloadCalendar() {
+            const form = document.getElementById('calendarForm');
+            const inputs = form.querySelectorAll('input[type="url"]');
+            let data = 'Bike Model,Day,Product Link,Completed\n';
+
+            inputs.forEach(input => {
+                const [model, , day] = input.name.split('_');
+                const checkbox = form.querySelector(`input[name="${model}_${day.replace('day', 'checkbox')}"]`);
+                const completed = checkbox.checked ? 'Yes' : 'No'; // Check if the checkbox is checked
+                data += `${model.replace(/-/g, ' ')},${day},${input.value || ''},${completed}\n`; // Allow empty values
+            });
+
+            const blob = new Blob([data], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            generatedLink = url; // Store the generated link
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'deal_of_the_day_calendar.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const contents = e.target.result;
+                    parseCSV(contents);
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function parseCSV(data) {
+            const lines = data.split('\n');
+            const models = {};
+
+            lines.forEach((line, index) => {
+                // Skip the header line
+                if (index === 0) return;
+
+                const [model, day, link, completed] = line.split(',');
+                if (model && day && link) {
+                    const normalizedModel = model.trim().replace(/ /g, '-');
+                    const normalizedDay = `day_${day.trim()}`; // normalize the day input
+
+                    if (!models[normalizedModel]) {
+                        models[normalizedModel] = [];
+                    }
+                    models[normalizedModel].push({ day: normalizedDay, link, completed });
+                }
+            });
+
+            // Clear previous input fields
+            document.getElementById('bikeModelsContainer').innerHTML = '';
+
+            // Populate bike models and links
+            for (const model in models) {
+                addBikeModelSection(model.replace(/-/g, ' ')); // Show original model name
+                models[model].forEach(item => {
+                    const input = document.querySelector(`input[name="${model}_${item.day}"]`); // Use updated name structure
+                    const checkbox = document.querySelector(`input[name="${model}_${item.day.replace('day', 'checkbox')}"]`); // Checkbox name
+                    if (input) {
+                        input.value = item.link;
+                        checkbox.checked = item.completed === 'Yes'; // Set checkbox based on CSV data
+                    }
+                });
+            }
+        }
+
+        function generateShareableLink() {
+            const linkInput = document.getElementById('shareableLink');
+            linkInput.value = generatedLink || 'No link generated yet.';
+        }
+
+        function copyToClipboard() {
+            const linkInput = document.getElementById('shareableLink');
+            linkInput.select();
+            document.execCommand('copy');
+            alert('Link copied to clipboard!');
+        }
+    </script>
+</body>
+</html>
